@@ -27,39 +27,6 @@ import java.util.ArrayList;
 
 @Controller
 public class HomeController {
-//    @RequestMapping("/oauth1")
-//    public ModelAndView oauth1() {
-//        String baseURL = "https://github.com/login/oauth/authorize?client_id=";
-//        String parameters = "&scope=user&state=12345&";
-//        String redirectURL = "redirect_uri=http://localhost:8080/oauth2";
-//
-//        String url = baseURL + Credentials.CLIENT_ID +
-//                parameters + redirectURL;
-//
-//        String result = "";
-//
-//        HttpClient client = HttpClientBuilder.create().build();
-//        HttpGet getRequest = new HttpGet(url);
-//        //1. Make http request to GitHub OAuth web service to get access code
-//        HttpResponse response;
-//        try {
-//            response = client.execute(getRequest);
-//            HttpEntity entity = response.getEntity();
-//
-//            InputStream content = entity.getContent();
-//            while (content.available() > 0) {
-//                result += (char) content.read();
-//            }
-//        } catch (ClientProtocolException e) {
-//            e.printStackTrace();
-//            return new ModelAndView("error", "errmsg", e.getStackTrace());
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return new ModelAndView("error", "errmsg", e.getStackTrace());
-//        }
-//        return new ModelAndView("oauth1", "result", result);
-//    }
-
     //step 1: Have the user login and get a code
     @RequestMapping("/")
     public ModelAndView oauth1() {
@@ -83,16 +50,15 @@ public class HomeController {
 
             //Unlike the weather example, here we're POSTing for
             //  additional security
-            // Setting the info GitHub needs
             //we're skipping the HttpHost here and doing it directly
             //note GitHub requires https
             HttpPost postPage = new HttpPost("https://github.com/login/oauth/access_token");
 
+            // Setting the info GitHub needs
             ArrayList <NameValuePair> postParameters = new ArrayList<NameValuePair>();
             postParameters.add(new BasicNameValuePair("client_id", Credentials.CLIENT_ID));
             postParameters.add(new BasicNameValuePair("client_secret", Credentials.CLIENT_SECRET));
             postParameters.add(new BasicNameValuePair("code", code));//what we got back from GitHub
-            //postParameters.add(new BasicNameValuePair("accept", "json"));//how we want the info
             postParameters.add(new BasicNameValuePair("accept", "JSON"));//how we want the info
 
             postPage.setEntity(new UrlEncodedFormEntity(postParameters, "UTF-8"));
@@ -116,15 +82,11 @@ public class HomeController {
             System.out.println("Token: " + token);
 
             int status = resp.getStatusLine().getStatusCode();
-//            System.out.println("Status: " + status);
-//            System.out.println("Blarg: " + resp.toString());
-//            System.out.println("Response: " + response);
-
 
             //step 3: use the token to make authenticated requests
             //asking for the user info
 
-            //couldn't get this to work with post for some reason
+            //couldn't get this to work with POST for some reason
 //            HttpPost postPage2 = new HttpPost("https://api.github.com/user");
 //            ArrayList <NameValuePair> postParameters2 = new ArrayList<NameValuePair>();
 //            postParameters2.add(new BasicNameValuePair("access_token", token));//pass the token back
@@ -133,7 +95,7 @@ public class HomeController {
             //actually run it and pull in the response
 //            HttpResponse resp2 = http.execute(postPage2);
 
-            //so doing it with get instead
+            //so doing it with HTTP GET instead
             HttpGet getPage = new HttpGet("https://api.github.com/user?access_token=" + token);
             HttpResponse resp2 = http.execute(getPage);
 
@@ -146,21 +108,26 @@ public class HomeController {
             String username = json.getString("login");
             String name = json.getString("name");
 
+            //returning lots of debugging/demo info
             ModelAndView mv = new ModelAndView("oauth2", "code", code);
             mv.addObject ("status", status);
             mv.addObject ("response", response);
             mv.addObject("token", token);//for debugging
             mv.addObject ("status2", status2);
             mv.addObject("response2", response2);
+
+            //in real life, I'd only add these two
             mv.addObject("username", username);
-             mv.addObject("name", name);
+            mv.addObject("name", name);
+
             return mv;
 
         } catch (IOException e) {
             e.printStackTrace();
+            return new ModelAndView("error", "errmgs", e.getStackTrace());
         }catch (JSONException e){
             e.printStackTrace();
+            return new ModelAndView("error", "errmgs", e.getStackTrace());
         }
-        return null;
     }
 }
